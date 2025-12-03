@@ -5,7 +5,6 @@ import pandas as pd
 import time
 import paho.mqtt.client as mqtt
 
-
 # ===============================
 # MQTT CONFIG
 # ===============================
@@ -16,58 +15,44 @@ MQTT_USER = "pepa2025"
 MQTT_PASSWORD = "Pepa2025"
 
 # ===============================
-# Callback MQTT
+# Callbacks MQTT
 # ===============================
 def on_connect(client, userdata, flags, rc):
     print("Connected with rc =", rc)
-    client.subscribe(MQTT_TOPIC)  # s'abonner pour recevoir les messages
 
 def on_publish(client, userdata, mid):
-    print("Message publié, mid =", mid)
-
-def on_message(client, userdata, msg):
-    try:
-        val = float(msg.payload.decode())
-        st.session_state['mqtt_val'] = val
-        print("Reçu via MQTT :", val)
-    except Exception as e:
-        print("Erreur conversion MQTT :", e)
+    print("Message published:", mid)
 
 # ===============================
 # Client MQTT
 # ===============================
 client = mqtt.Client()
 client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-client.tls_set()
+client.tls_set()  # 🔒 TLS obligatoire pour port 8883 HiveMQ Cloud
 client.on_connect = on_connect
 client.on_publish = on_publish
-client.on_message = on_message
 
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
-client.loop_start()  # boucle en arrière-plan pour envoi + réception
+client.loop_start()  # 🔥 une seule fois
 
 # ===============================
-# Initialisation session_state
+# Widget Streamlit
 # ===============================
-if 'mqtt_val' not in st.session_state:
-    st.session_state['mqtt_val'] = 0
-
-# ===============================
-# Widgets Streamlit
-# ===============================
-st.sidebar.header("Envoyer sur MQTT")
-val_to_send = st.sidebar.number_input("Watering (g) :", min_value=0, max_value=9999, value=0)
+st.sidebar.header("Send command")
+val = st.sidebar.number_input("Watering (g) :", min_value=0, max_value=9999, value=0)
 
 if st.sidebar.button("Envoyer sur MQTT"):
-    result = client.publish(MQTT_TOPIC, str(val_to_send), qos=0)
+    result = client.publish(MQTT_TOPIC, str(val), qos=0)
     if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        st.sidebar.success(f"Message envoyé : {val_to_send}")
+        st.sidebar.success(f"Message MQTT envoyé : {val}")
     else:
         st.sidebar.error(f"Erreur publish rc={result.rc}")
-
-st.sidebar.header("Dernière valeur reçue via MQTT")
-st.sidebar.number_input("Valeur MQTT", value=st.session_state['mqtt_val'])
-st.sidebar.write("Valeur MQTT actuelle :", st.session_state['mqtt_val'])
+        
+# ===============================
+# Sidebar widgets
+# ===============================
+progress_bar = st.sidebar.progress(0)
+status_text = st.sidebar.empty()
 
 # ===============================
 # MySQL
@@ -139,4 +124,3 @@ if not df.empty:
 
 progress_bar.empty()
 st.button("Rerun")
-
