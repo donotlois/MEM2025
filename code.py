@@ -47,6 +47,31 @@ if st.sidebar.button("Envoyer sur MQTT"):
         st.sidebar.success(f"Message MQTT envoyé : {val}")
     else:
         st.sidebar.error(f"Erreur publish rc={result.rc}")
+
+# ===============================
+# Callback pour recevoir les messages
+# ===============================
+def on_message(client, userdata, msg):
+    try:
+        val = float(msg.payload.decode())
+        st.session_state['mqtt_val'] = val
+        print("Reçu via MQTT :", val)
+    except Exception as e:
+        print("Erreur conversion MQTT :", e)
+
+# Abonnement au topic pour recevoir les messages
+client.on_message = on_message
+client.subscribe("poids")
+
+# Initialiser la valeur MQTT dans session_state
+if 'mqtt_val' not in st.session_state:
+    st.session_state['mqtt_val'] = 0
+
+# Affichage de la valeur reçue
+st.sidebar.number_input("Dernière valeur reçue via MQTT", 
+                        value=st.session_state['mqtt_val'])
+st.sidebar.write("Valeur MQTT actuelle :", st.session_state['mqtt_val'])
+
         
 # ===============================
 # Sidebar widgets
