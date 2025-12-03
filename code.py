@@ -35,7 +35,7 @@ st.sidebar.header("Envoi MQTT")
 val = st.sidebar.number_input("Choisir un chiffre :", min_value=0, max_value=9999, value=0)
 
 if st.sidebar.button("Envoyer sur MQTT"):
-    info = client.publish(MQTT_TOPIC, str(val))
+    client.publish(MQTT_TOPIC, str(val), qos=0)
     if info.rc == 0:
         st.sidebar.success(f"Message MQTT envoyé : {val}")
     else:
