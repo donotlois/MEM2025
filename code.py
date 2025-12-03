@@ -38,8 +38,8 @@ client.loop_start()  # 🔥 une seule fois
 # ===============================
 # Widget Streamlit
 # ===============================
-st.sidebar.header("Envoi MQTT")
-val = st.sidebar.number_input("Choisir un chiffre :", min_value=0, max_value=9999, value=0)
+st.sidebar.header("Send command")
+val = st.sidebar.number_input("Watering (g) :", min_value=0, max_value=9999, value=0)
 
 if st.sidebar.button("Envoyer sur MQTT"):
     result = client.publish(MQTT_TOPIC, str(val), qos=0)
