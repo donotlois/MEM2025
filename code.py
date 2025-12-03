@@ -14,45 +14,40 @@ MQTT_TOPIC = "weight"
 MQTT_USER = "pepa2025"
 MQTT_PASSWORD = "Pepa2025"
 
+# ===============================
+# Callbacks MQTT
+# ===============================
 def on_connect(client, userdata, flags, rc):
     print("Connected with rc =", rc)
 
 def on_publish(client, userdata, mid):
     print("Message published:", mid)
 
+# ===============================
+# Client MQTT
+# ===============================
 client = mqtt.Client()
+client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+client.tls_set()  # 🔒 TLS obligatoire pour port 8883 HiveMQ Cloud
 client.on_connect = on_connect
-client.loop_start()  # 🔥 ESSENTIEL pour que publish fonctionne
 client.on_publish = on_publish
 
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
-client.loop_start()
+client.loop_start()  # 🔥 une seule fois
 
-val = st.sidebar.slider("Valeur", 0, 100, 50)
-
-if st.sidebar.button("Envoyer sur MQTT"):
-    result = client.publish(MQTT_TOPIC, str(val), qos=0)
-    if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        st.sidebar.success("Envoyé !")
-    else:
-        st.sidebar.error(f"Erreur MQTT : {result.rc}")
-
-# ======================================
+# ===============================
 # Widget Streamlit
-# ======================================
+# ===============================
 st.sidebar.header("Envoi MQTT")
-
 val = st.sidebar.number_input("Choisir un chiffre :", min_value=0, max_value=9999, value=0)
 
 if st.sidebar.button("Envoyer sur MQTT"):
     result = client.publish(MQTT_TOPIC, str(val), qos=0)
-    
     if result.rc == mqtt.MQTT_ERR_SUCCESS:
         st.sidebar.success(f"Message MQTT envoyé : {val}")
     else:
         st.sidebar.error(f"Erreur publish rc={result.rc}")
-
-
+        
 # ===============================
 # Sidebar widgets
 # ===============================
