@@ -22,6 +22,10 @@ client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 try:
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     st.sidebar.success("MQTT connecté")
+    client.loop_start()
+    
+   result = client.publish(MQTT_TOPIC, str(val))
+   st.sidebar.write(result.rc)   # doit afficher 0 si OK
 except Exception as e:
     st.sidebar.error(f"Erreur MQTT : {e}")
 
@@ -62,7 +66,7 @@ try:
         st.success("Connexion réussie à la base de données")
 
         cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM poids ORDER BY Time DESC LIMIT 500;"
+        query = "SELECT * FROM poids ORDER BY Time DESC LIMIT 50;"
         cursor.execute(query)
         results = cursor.fetchall()
 
