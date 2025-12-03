@@ -14,31 +14,32 @@ MQTT_TOPIC = "weight"
 MQTT_USER = "pepa2025"
 MQTT_PASSWORD = "Pepa2025"
 
+# Création client MQTT
 client = mqtt.Client()
 
-# Ajouter user + password
+# Authentification
 client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
 try:
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    client.loop_start()  # 🔥 ESSENTIEL pour que publish fonctionne
     st.sidebar.success("MQTT connecté")
-    client.loop_start()
-    
-   result = client.publish(MQTT_TOPIC, str(val))
-   st.sidebar.write(result.rc)   # doit afficher 0 si OK
 except Exception as e:
     st.sidebar.error(f"Erreur MQTT : {e}")
 
-# ===============================
-# Sidebar : envoi MQTT
-# ===============================
+# ======================================
+# Widget Streamlit
+# ======================================
 st.sidebar.header("Envoi MQTT")
 
 val = st.sidebar.number_input("Choisir un chiffre :", min_value=0, max_value=9999, value=0)
 
 if st.sidebar.button("Envoyer sur MQTT"):
-    client.publish(MQTT_TOPIC, str(val))
-    st.sidebar.success(f"Envoyé : {val}")
+    info = client.publish(MQTT_TOPIC, str(val))
+    if info.rc == 0:
+        st.sidebar.success(f"Message MQTT envoyé : {val}")
+    else:
+        st.sidebar.error(f"Erreur publish rc={info.rc}")
 
 # ===============================
 # Sidebar widgets
