@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import paho.mqtt.client as mqtt
 
+
 # ===============================
 # MQTT CONFIG
 # ===============================
@@ -15,42 +16,15 @@ MQTT_USER = "pepa2025"
 MQTT_PASSWORD = "Pepa2025"
 
 # ===============================
-# Callbacks MQTT
+# Callback MQTT
 # ===============================
 def on_connect(client, userdata, flags, rc):
     print("Connected with rc =", rc)
+    client.subscribe(MQTT_TOPIC)  # s'abonner pour recevoir les messages
 
 def on_publish(client, userdata, mid):
-    print("Message published:", mid)
+    print("Message publié, mid =", mid)
 
-# ===============================
-# Client MQTT
-# ===============================
-client = mqtt.Client()
-client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-client.tls_set()  # 🔒 TLS obligatoire pour port 8883 HiveMQ Cloud
-client.on_connect = on_connect
-client.on_publish = on_publish
-
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
-client.loop_start()  # 🔥 une seule fois
-
-# ===============================
-# Widget Streamlit
-# ===============================
-st.sidebar.header("Send command")
-val = st.sidebar.number_input("Watering (g) :", min_value=0, max_value=9999, value=0)
-
-if st.sidebar.button("Envoyer sur MQTT"):
-    result = client.publish(MQTT_TOPIC, str(val), qos=0)
-    if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        st.sidebar.success(f"Message MQTT envoyé : {val}")
-    else:
-        st.sidebar.error(f"Erreur publish rc={result.rc}")
-
-# ===============================
-# Callback pour recevoir les messages
-# ===============================
 def on_message(client, userdata, msg):
     try:
         val = float(msg.payload.decode())
@@ -59,25 +33,41 @@ def on_message(client, userdata, msg):
     except Exception as e:
         print("Erreur conversion MQTT :", e)
 
-# Abonnement au topic pour recevoir les messages
+# ===============================
+# Client MQTT
+# ===============================
+client = mqtt.Client()
+client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+client.tls_set()
+client.on_connect = on_connect
+client.on_publish = on_publish
 client.on_message = on_message
-client.subscribe("poids")
 
-# Initialiser la valeur MQTT dans session_state
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.loop_start()  # boucle en arrière-plan pour envoi + réception
+
+# ===============================
+# Initialisation session_state
+# ===============================
 if 'mqtt_val' not in st.session_state:
     st.session_state['mqtt_val'] = 0
 
-# Affichage de la valeur reçue
-st.sidebar.number_input("Dernière valeur reçue via MQTT", 
-                        value=st.session_state['mqtt_val'])
-st.sidebar.write("Valeur MQTT actuelle :", st.session_state['mqtt_val'])
+# ===============================
+# Widgets Streamlit
+# ===============================
+st.sidebar.header("Envoyer sur MQTT")
+val_to_send = st.sidebar.number_input("Watering (g) :", min_value=0, max_value=9999, value=0)
 
-        
-# ===============================
-# Sidebar widgets
-# ===============================
-progress_bar = st.sidebar.progress(0)
-status_text = st.sidebar.empty()
+if st.sidebar.button("Envoyer sur MQTT"):
+    result = client.publish(MQTT_TOPIC, str(val_to_send), qos=0)
+    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+        st.sidebar.success(f"Message envoyé : {val_to_send}")
+    else:
+        st.sidebar.error(f"Erreur publish rc={result.rc}")
+
+st.sidebar.header("Dernière valeur reçue via MQTT")
+st.sidebar.number_input("Valeur MQTT", value=st.session_state['mqtt_val'])
+st.sidebar.write("Valeur MQTT actuelle :", st.session_state['mqtt_val'])
 
 # ===============================
 # MySQL
