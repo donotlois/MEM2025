@@ -14,18 +14,28 @@ MQTT_TOPIC = "weight"
 MQTT_USER = "pepa2025"
 MQTT_PASSWORD = "Pepa2025"
 
-# Création client MQTT
+def on_connect(client, userdata, flags, rc):
+    print("Connected with rc =", rc)
+
+def on_publish(client, userdata, mid):
+    print("Message published:", mid)
+
 client = mqtt.Client()
+client.on_connect = on_connect
+client.loop_start()  # 🔥 ESSENTIEL pour que publish fonctionne
+client.on_publish = on_publish
 
-# Authentification
-client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.loop_start()
 
-try:
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
-    client.loop_start()  # 🔥 ESSENTIEL pour que publish fonctionne
-    st.sidebar.success("MQTT connecté")
-except Exception as e:
-    st.sidebar.error(f"Erreur MQTT : {e}")
+val = st.sidebar.slider("Valeur", 0, 100, 50)
+
+if st.sidebar.button("Envoyer sur MQTT"):
+    result = client.publish(MQTT_TOPIC, str(val), qos=0)
+    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+        st.sidebar.success("Envoyé !")
+    else:
+        st.sidebar.error(f"Erreur MQTT : {result.rc}")
 
 # ======================================
 # Widget Streamlit
