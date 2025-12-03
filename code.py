@@ -55,7 +55,12 @@ user = "sql7810321"
 password = "BwpCu2zT9b"
 database = "sql7810321"
 
+df = pd.DataFrame()
+connection = None
+cursor = None
+
 try:
+    # Connexion MySQL
     connection = mysql.connector.connect(
         host=host,
         user=user,
@@ -67,20 +72,29 @@ try:
         st.success("Connexion réussie à la base de données")
 
         cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM poids ORDER BY Time DESC LIMIT 50;"
+        query = "SELECT * FROM poids ORDER BY Time DESC LIMIT 500;"
         cursor.execute(query)
         results = cursor.fetchall()
-
         df = pd.DataFrame(results)
 
 except Error as e:
-    st.error(f"Erreur lors de la connexion MySQL : {e}")
-    df = pd.DataFrame()
+    st.error(f"Erreur MySQL : {e}")
 
 finally:
-    if connection.is_connected():
-        cursor.close()
-        connection.close()
+    # Fermer cursor S'IL EXISTE
+    if cursor is not None:
+        try:
+            cursor.close()
+        except:
+            pass
+
+    # Fermer connexion S'IL EST CONNECTÉ
+    if connection is not None:
+        try:
+            if connection.is_connected():
+                connection.close()
+        except:
+            pass
 
 # ===============================
 # Affichage graphique
