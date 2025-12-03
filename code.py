@@ -79,7 +79,7 @@ try:
         st.success("Connexion réussie à la base de données")
 
         cursor = connection.cursor(dictionary=True)
-        query = "SELECT * FROM poids ORDER BY Time DESC LIMIT 500;"
+        query = "SELECT * FROM poids ORDER BY Time DESC LIMIT 50;"
         cursor.execute(query)
         results = cursor.fetchall()
         df = pd.DataFrame(results)
